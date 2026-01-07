@@ -70,13 +70,31 @@ pub struct XmlData {
 	// Notes
 	// TODO
 	pub notes: Vec<String>,
+	// UKUPNI IZNOSI
+	// ID: BG-22
+	// /Invoice/cac:LegalMonetaryTotal
+	// 1..1
+	pub legal_monetary_total: LegalMonetaryTotal,
+	// UPUTE ZA PLAĆANJE
+	// ID: BG-16
+	// /Invoice/cac:PaymentMeans
+	// 0..1
+	pub payment_means: Option<PaymentMeans>,
+	// PRODAVATELJ
+	// ID: BG-4
+	// /Invoice/cac:AccountingSupplierParty
+	// 1..1
+	pub accounting_supplier_party: AccountingSupplierParty,
+	// KUPAC
+	// ID: BG-7
+	// /Invoice/cac:AccountingCustomerParty
+	// 1..1
+	pub accounting_customer_party: AccountingCustomerParty,
 	// STAVKA RAČUNA
 	// ID: BG-25
 	// /Invoice/cac:InvoiceLine
 	// 1..n
 	pub invoice_lines: Vec<InvoiceLine>,
-	#[serde(skip)]
-	pub current_invoice_line: usize,
 
 	// Path stuff
 	#[serde(skip)]
@@ -109,12 +127,165 @@ impl XmlData {
 		let mut line = InvoiceLine::default();
 		line.id = id;
 		self.invoice_lines.push(line);
-		self.current_invoice_line = self.invoice_lines.len() - 1;
 	}
 
 	pub fn invoice_line(&mut self) -> &mut InvoiceLine {
-		self.invoice_lines.get_mut(self.current_invoice_line).unwrap()
+		self.invoice_lines.last_mut().unwrap()
 	}
+
+	pub fn new_payee_financial_account(&mut self, id: String) {
+		let mut a = PayeeFinancialAccount::default();
+		a.id = id;
+		self.payment_means().payee_financial_accounts.push(a);
+	}
+
+	pub fn payment_means(&mut self) -> &mut PaymentMeans {
+		if self.payment_means.is_none() {
+			self.payment_means = Some(PaymentMeans::default());
+		}
+
+		self.payment_means.as_mut().unwrap()
+	}
+}
+
+#[derive(Debug, Default, serde::Serialize)]
+pub struct AccountingCustomerParty {}
+
+#[derive(Debug, Default, serde::Serialize)]
+pub struct PostalAddress {
+	// Redak adrese Prodavatelja 1
+	// ID: BT-35
+	// /Invoice/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cbc:StreetName
+	// 0..1
+	street_name: Option<String>,
+	// Redak adrese Prodavatelja 2
+	// ID: BT-36
+	// /Invoice/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cbc:AdditionalStreetName
+	// 0..1
+	additional_street_name: Option<String>,
+	// Redak adrese Prodavatelja 3
+	// ID: BT-162
+	// /Invoice/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:AddressLine/cbc:Line
+	// 0..1
+	line: Option<String>,
+	// Grad Prodavatelja
+	// ID: BT-37
+	// /Invoice/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cbc:CityName
+	// 0..1
+	city_name: Option<String>,
+	// Poštanski broj Prodavatelja
+	// ID: BT-38
+	// /Invoice/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cbc:PostalZone
+	// 0..1
+	postal_zone: Option<String>,
+	// Županija Prodavatelja
+	// ID: BT-39
+	// /Invoice/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cbc:CountrySubentity
+	// 0..1
+	country_subentity: Option<String>,
+	// Šifra države Prodavatelja
+	// ID: BT-40
+	// /Invoice/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode
+	// 1..1
+	identification_code: String,
+}
+
+#[derive(Debug, Default, serde::Serialize)]
+pub struct AccountingSupplierParty {
+	// Naziv Prodavatelja
+	// ID: BT-27
+	// /Invoice/cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName
+	// 1..1
+	registration_name: String,
+	// Dodatne pravne informacije o Prodavatelju
+	// ID: BT-33
+	// /Invoice/cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyLegalForm
+	// 1..1
+	company_legal_form: String,
+	// Elektronička adresa Prodavatelja
+	// ID: BT-34
+	// /Invoice/cac:AccountingSupplierParty/cac:Party/cbc:EndpointID
+	// 1..1
+	endpoint_id: String,
+	// Identifikator sheme
+	// ID: BT-34
+	// /Invoice/cac:AccountingSupplierParty/cac:Party/cbc:EndpointID/@schemeID
+	// 1..1
+	endpoint_id_scheme_id: String,
+	// POŠTANSKA ADRESA PRODAVATELJA
+	// ID: BG-5
+	// /Invoice/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress
+	// 1..1
+	postal_address: PostalAddress,
+}
+
+#[derive(Debug, Default, serde::Serialize)]
+pub struct PayeeFinancialAccount {
+	// Identifikator računa plaćanja
+	// ID: BT-84
+	// /Invoice/cac:PaymentMeans/cac:PayeeFinancialAccount/cbc:ID
+	// 1..1
+	id: String,
+}
+
+#[derive(Debug, Default, serde::Serialize)]
+pub struct PaymentMeans {
+	// Šifra načina plaćanja
+	// ID: BT-81
+	// /Invoice/cac:PaymentMeans/cbc:PaymentMeansCode
+	// 1..1
+	payment_means_code: String,
+	// Tekst načina plaćanja
+	// ID: BT-82
+	// /Invoice/cac:PaymentMeans/cbc:InstructionNote
+	// 0..1
+	instruction_note: Option<String>,
+	// Informacije o doznaci
+	// ID: BT-83
+	// /Invoice/cac:PaymentMeans/cbc:PaymentID
+	// 0..1
+	payment_id: Option<String>,
+	// KREDITNI TRANSFER
+	// ID: BG-17
+	// /Invoice/cac:PaymentMeans/cac:PayeeFinancialAccount
+	// 0..n
+	payee_financial_accounts: Vec<PayeeFinancialAccount>,
+}
+
+#[derive(Debug, Default, serde::Serialize)]
+pub struct LegalMonetaryTotal {
+	// Zbroj svih neto iznosa stavki računa
+	// ID: BT-106
+	// /Invoice/cac:LegalMonetaryTotal/cbc:LineExtensionAmount
+	// 1..1
+	line_extension_amount: String,
+	// ???
+	// TODO
+	line_extension_amount_currency_id: Option<String>,
+	// Ukupni iznos računa bez PDV-a
+	// ID: BT-109
+	// /Invoice/cac:LegalMonetaryTotal/cbc:TaxExclusiveAmount
+	// 1..1
+	tax_exclusive_amount: String,
+	// ???
+	// TODO
+	tax_exclusive_amount_currency_id: Option<String>,
+	// Ukupni iznos računa s PDV-om
+	// ID: BT-112
+	// /Invoice/cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount
+	// 1..1
+	tax_inclusive_amount: String,
+	// ???
+	// TODO
+	tax_inclusive_amount_currency_id: Option<String>,
+	// Iznos koji dospijeva na plaćanje
+	// ID: BT-115
+	// /Invoice/cac:LegalMonetaryTotal/cbc:PayableAmount
+	// 1..1
+	payable_amount: String,
+	// ???
+	// TODO
+	payable_amount_currency_id: Option<String>,
 }
 
 #[derive(Debug, Default, serde::Serialize)]
@@ -285,6 +456,74 @@ pub fn main_logic(parser: &mut EventReader<BufReader<File>>, xml_data: &mut XmlD
 			},
 			"/Invoice/cac:InvoiceLine/cac:Item/cbc:Description" => {
 				xml_data.invoice_line().item.description = Some(read_string(parser));
+			},
+			"/Invoice/cac:LegalMonetaryTotal/cbc:LineExtensionAmount" => {
+				xml_data.legal_monetary_total.line_extension_amount = read_string(parser);
+				if let Some(currency_id) = attributes.iter().find(|x| x.name.local_name == "currencyID") {
+					xml_data.legal_monetary_total.line_extension_amount_currency_id = Some(currency_id.value.clone());
+				}
+			},
+			"/Invoice/cac:LegalMonetaryTotal/cbc:TaxExclusiveAmount" => {
+				xml_data.legal_monetary_total.tax_exclusive_amount = read_string(parser);
+				if let Some(currency_id) = attributes.iter().find(|x| x.name.local_name == "currencyID") {
+					xml_data.legal_monetary_total.tax_exclusive_amount_currency_id = Some(currency_id.value.clone());
+				}
+			},
+			"/Invoice/cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount" => {
+				xml_data.legal_monetary_total.tax_inclusive_amount = read_string(parser);
+				if let Some(currency_id) = attributes.iter().find(|x| x.name.local_name == "currencyID") {
+					xml_data.legal_monetary_total.tax_inclusive_amount_currency_id = Some(currency_id.value.clone());
+				}
+			},
+			"/Invoice/cac:LegalMonetaryTotal/cbc:PayableAmount" => {
+				xml_data.legal_monetary_total.payable_amount = read_string(parser);
+				if let Some(currency_id) = attributes.iter().find(|x| x.name.local_name == "currencyID") {
+					xml_data.legal_monetary_total.payable_amount_currency_id = Some(currency_id.value.clone());
+				}
+			},
+			"/Invoice/cac:PaymentMeans/cbc:PaymentMeansCode" => {
+				xml_data.payment_means().payment_means_code = read_string(parser);
+			},
+			"/Invoice/cac:PaymentMeans/cbc:InstructionNote" => {
+				xml_data.payment_means().instruction_note = Some(read_string(parser));
+			},
+			"/Invoice/cac:PaymentMeans/cbc:PaymentID" => {
+				xml_data.payment_means().payment_id = Some(read_string(parser));
+			},
+			"/Invoice/cac:PaymentMeans/cac:PayeeFinancialAccount/cbc:ID" => {
+				xml_data.new_payee_financial_account(read_string(parser));
+			},
+			"/Invoice/cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName" => {
+				xml_data.accounting_supplier_party.registration_name = read_string(parser);
+			},
+			"/Invoice/cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyLegalForm" => {
+				xml_data.accounting_supplier_party.company_legal_form = read_string(parser);
+			},
+			"/Invoice/cac:AccountingSupplierParty/cac:Party/cbc:EndpointID" => {
+				xml_data.accounting_supplier_party.endpoint_id = read_string(parser);
+				let scheme_id = attributes.iter().find(|x| x.name.local_name == "schemeID").unwrap();
+				xml_data.accounting_supplier_party.endpoint_id_scheme_id = scheme_id.value.clone();
+			},
+			"/Invoice/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cbc:StreetName" => {
+				xml_data.accounting_supplier_party.postal_address.street_name = Some(read_string(parser));
+			},
+			"/Invoice/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cbc:AdditionalStreetName" => {
+				xml_data.accounting_supplier_party.postal_address.additional_street_name = Some(read_string(parser));
+			},
+			"/Invoice/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:AddressLine/cbc:Line" => {
+				xml_data.accounting_supplier_party.postal_address.line = Some(read_string(parser));
+			},
+			"/Invoice/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cbc:CityName" => {
+				xml_data.accounting_supplier_party.postal_address.city_name = Some(read_string(parser));
+			},
+			"/Invoice/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cbc:PostalZone" => {
+				xml_data.accounting_supplier_party.postal_address.postal_zone = Some(read_string(parser));
+			},
+			"/Invoice/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cbc:CountrySubentity" => {
+				xml_data.accounting_supplier_party.postal_address.country_subentity = Some(read_string(parser));
+			},
+			"/Invoice/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode" => {
+				xml_data.accounting_supplier_party.postal_address.identification_code = read_string(parser);
 			},
 			_ => (),
 		}
