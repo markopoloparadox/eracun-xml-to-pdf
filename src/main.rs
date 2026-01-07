@@ -149,10 +149,100 @@ impl XmlData {
 }
 
 #[derive(Debug, Default, serde::Serialize)]
-pub struct AccountingCustomerParty {}
+pub struct PostalAddressCustomer {
+	// Redak adrese Kupca 1
+	// ID: BT-50
+	// /Invoice/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cbc:StreetName
+	// 0..1
+	street_name: Option<String>,
+	// Redak adrese Kupca 2
+	// ID: BT-51
+	// /Invoice/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cbc:AdditionalStreetName
+	// 0..1
+	additional_street_name: Option<String>,
+	// Redak adrese Kupca 3
+	// ID: BT-163
+	// /Invoice/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cac:AddressLine/cbc:Line
+	// 0..1
+	line: Option<String>,
+	// Grad Kupca
+	// ID: BT-52
+	// /Invoice/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cbc:CityName
+	// 0..1
+	city_name: Option<String>,
+	// Poštanski broj Kupca
+	// ID: BT-53
+	// /Invoice/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cbc:PostalZone
+	// 0..1
+	postal_zone: Option<String>,
+	// Županija Kupca
+	// ID: BT-54
+	// /Invoice/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cbc:CountrySubentity
+	// 0..1
+	country_subentity: Option<String>,
+	// Šifra države Kupca
+	// ID: BT-55
+	// /Invoice/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode
+	// 1..1
+	identification_code: String,
+}
 
 #[derive(Debug, Default, serde::Serialize)]
-pub struct PostalAddress {
+pub struct AccountingCustomerParty {
+	// Ime Kupca
+	// ID: BT-44
+	// /Invoice/cac:AccountingCustomerParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName
+	// 1..1
+	registration_name: String,
+	// Trgovački naziv Kupca
+	// ID: BT-45
+	// /Invoice/cac:AccountingCustomerParty/cac:Party/cac:PartyName/cbc:Name
+	// 0..1
+	name: Option<String>,
+	// Identifikator Kupca
+	// ID: BT-46
+	// /Invoice/cac:AccountingCustomerParty/cac:Party/cac:PartyIdentification/cbc:ID
+	// 0..1
+	id: Option<String>,
+	// Identifikator sheme
+	// ID: BT-46
+	// /Invoice/cac:AccountingCustomerParty/cac:Party/cac:PartyIdentification/cbc:ID/@schemeID
+	// 0..1
+	id_scheme_id: Option<String>,
+	// Identifikator pravne registracije Kupca
+	// ID: BT-47
+	// /Invoice/cac:AccountingCustomerParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyID
+	// 0..1
+	legal_entity_company_id: Option<String>,
+	// Identifikator sheme
+	// ID: BT-47
+	// /Invoice/cac:AccountingCustomerParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyID/@schemeID
+	// 0..1
+	legal_entity_company_id_scheme_id: Option<String>,
+	// Porezni identifikator Kupca
+	// ID: BT-48
+	// /Invoice/cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID
+	// 0..1
+	tax_scheme_company_id: Option<String>,
+	// Elektronička adresa Kupca
+	// ID: BT-49
+	// /Invoice/cac:AccountingCustomerParty/cac:Party/cbc:EndpointID
+	// 0..1
+	endpoint_id: Option<String>,
+	//Identifikator sheme
+	// ID: BT-49
+	// /Invoice/cac:AccountingCustomerParty/cac:Party/cbc:EndpointID/@schemeID
+	// 1..1
+	endpoint_id_scheme_id: Option<String>,
+	// POŠTANSKA ADRESA KUPCA
+	// ID: BG-8
+	// /Invoice/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress
+	// 1..1
+	postal_address: PostalAddressCustomer,
+}
+
+#[derive(Debug, Default, serde::Serialize)]
+pub struct PostalAddressSupplier {
 	// Redak adrese Prodavatelja 1
 	// ID: BT-35
 	// /Invoice/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cbc:StreetName
@@ -216,7 +306,7 @@ pub struct AccountingSupplierParty {
 	// ID: BG-5
 	// /Invoice/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress
 	// 1..1
-	postal_address: PostalAddress,
+	postal_address: PostalAddressSupplier,
 }
 
 #[derive(Debug, Default, serde::Serialize)]
@@ -524,6 +614,55 @@ pub fn main_logic(parser: &mut EventReader<BufReader<File>>, xml_data: &mut XmlD
 			},
 			"/Invoice/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode" => {
 				xml_data.accounting_supplier_party.postal_address.identification_code = read_string(parser);
+			},
+			"/Invoice/cac:AccountingCustomerParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName" => {
+				xml_data.accounting_customer_party.registration_name = read_string(parser);
+			},
+			"/Invoice/cac:AccountingCustomerParty/cac:Party/cac:PartyName/cbc:Name" => {
+				xml_data.accounting_customer_party.name = Some(read_string(parser));
+			},
+			"/Invoice/cac:AccountingCustomerParty/cac:Party/cac:PartyIdentification/cbc:ID" => {
+				xml_data.accounting_customer_party.id = Some(read_string(parser));
+				if let Some(scheme_id) = attributes.iter().find(|x| x.name.local_name == "schemeID") {
+					xml_data.accounting_customer_party.id_scheme_id = Some(scheme_id.value.clone());
+				}
+			},
+			"/Invoice/cac:AccountingCustomerParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyID" => {
+				xml_data.accounting_customer_party.legal_entity_company_id = Some(read_string(parser));
+				if let Some(scheme_id) = attributes.iter().find(|x| x.name.local_name == "schemeID") {
+					xml_data.accounting_customer_party.legal_entity_company_id_scheme_id =
+						Some(scheme_id.value.clone());
+				}
+			},
+			"/Invoice/cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID" => {
+				xml_data.accounting_customer_party.tax_scheme_company_id = Some(read_string(parser));
+			},
+			"/Invoice/cac:AccountingCustomerParty/cac:Party/cbc:EndpointID" => {
+				xml_data.accounting_customer_party.endpoint_id = Some(read_string(parser));
+				if let Some(scheme_id) = attributes.iter().find(|x| x.name.local_name == "schemeID") {
+					xml_data.accounting_customer_party.endpoint_id_scheme_id = Some(scheme_id.value.clone());
+				}
+			},
+			"/Invoice/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cbc:StreetName" => {
+				xml_data.accounting_customer_party.postal_address.street_name = Some(read_string(parser));
+			},
+			"/Invoice/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cbc:AdditionalStreetName" => {
+				xml_data.accounting_customer_party.postal_address.additional_street_name = Some(read_string(parser));
+			},
+			"/Invoice/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cac:AddressLine/cbc:Line" => {
+				xml_data.accounting_customer_party.postal_address.line = Some(read_string(parser));
+			},
+			"/Invoice/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cbc:CityName" => {
+				xml_data.accounting_customer_party.postal_address.city_name = Some(read_string(parser));
+			},
+			"/Invoice/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cbc:PostalZone" => {
+				xml_data.accounting_customer_party.postal_address.postal_zone = Some(read_string(parser));
+			},
+			"/Invoice/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cbc:CountrySubentity" => {
+				xml_data.accounting_customer_party.postal_address.postal_zone = Some(read_string(parser));
+			},
+			"/Invoice/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode" => {
+				xml_data.accounting_customer_party.postal_address.identification_code = read_string(parser);
 			},
 			_ => (),
 		}
